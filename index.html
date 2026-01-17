@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aventurine's Fanfic Theater</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@300;400;500&display=swap');
+
+    :root {
+        --c-gold: #d4af37;
+        --c-gold-dim: #8a7338;
+        --c-dark: #121212;
+        --c-dark-gray: #1e1e1e;
+        --c-text: #e0e0e0;
+        --c-accent: #ff4d4d;
+        --c-bg-panel: rgba(30, 30, 30, 0.95);
+    }
+
+    * { box-sizing: border-box; user-select: none; }
+    
+    body { margin: 0; padding: 0; background: transparent; font-family: 'Noto Sans SC', sans-serif; overflow: hidden; }
+
+    /* Main Container */
+    #theater-container {
+        width: 100vw;
+        height: 100vh;
+        max-width: 100%;
+        max-height: 100%;
+        background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+        border: 2px solid var(--c-gold);
+        border-radius: 0;
+        position: relative;
+        overflow: hidden;
+        margin: 0;
+        box-shadow: none;
+        color: var(--c-text);
+    }
+
+    /* Common Header */
+    .header {
+        height: 50px;
+        border-bottom: 1px solid var(--c-gold-dim);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0,0,0,0.5);
+        font-family: 'Noto Serif SC', serif;
+        font-weight: 700;
+        font-size: 18px;
+        color: var(--c-gold);
+        position: relative;
+        z-index: 10;
+    }
+    
+    .header span { margin: 0 10px; }
+
+    /* Modal for Name Input */
+    #name-modal {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.95);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: var(--c-gold);
+    }
+    
+    .modal-content {
+        background: #1a1a1a;
+        padding: 40px;
+        border: 2px solid var(--c-gold);
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 0 30px rgba(212, 175, 55, 0.2);
+    }
+    
+    .modal-content h2 { margin-top: 0; font-family: 'Noto Serif SC', serif; }
+    
+    #input-name {
+        background: transparent;
+        border: none;
+        border-bottom: 2px solid var(--c-gold-dim);
+        color: #fff;
+        font-size: 18px;
+        padding: 10px;
+        text-align: center;
+        margin: 20px 0;
+        outline: none;
+        font-family: 'Noto Sans SC', sans-serif;
+        width: 200px;
+        transition: border-color 0.3s;
+    }
+    #input-name:focus { border-color: var(--c-gold); }
+    
+    #btn-start {
+        background: var(--c-gold);
+        color: #000;
+        border: none;
+        padding: 10px 30px;
+        font-size: 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: transform 0.2s;
+    }
+    #btn-start:hover { transform: scale(1.05); }
+
+    /* Screen Management */
+    .screen {
+        position: absolute;
+        top: 50px;
+        left: 0;
+        width: 100%;
+        height: 610px;
+        padding: 20px;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.5s ease, transform 0.5s ease;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--c-gold) transparent;
+    }
+    
+    .screen.active {
+        display: block;
+        opacity: 1;
+        animation: fadeIn 0.5s forwards;
+    }
+
+    .screen::-webkit-scrollbar { width: 6px; }
+    .screen::-webkit-scrollbar-thumb { background: var(--c-gold); border-radius: 3px; }
+
+    /* SCREEN 1: Bookshelf */
+    .bookshelf-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        padding: 10px;
+        justify-items: center;
+    }
+
+    .book-item {
+        width: 100px;
+        height: 140px;
+        background: linear-gradient(to right, #2c2c2c, #1f1f1f 5%, #2c2c2c 10%, #1f1f1f);
+        border: 1px solid var(--c-gold-dim);
+        border-radius: 4px 8px 8px 4px;
+        box-shadow: 5px 5px 10px rgba(0,0,0,0.5), inset 2px 0 5px rgba(255,255,255,0.05);
+        cursor: pointer;
+        position: relative;
+        transition: transform 0.3s, box-shadow 0.3s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 5px;
+        font-family: 'Noto Serif SC', serif;
+    }
+
+    .book-item:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 0 0 15px var(--c-gold);
+        border-color: var(--c-gold);
+    }
+    
+    .book-spine {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 8px;
+        background: #111;
+        border-radius: 4px 0 0 4px;
+        opacity: 0.5;
+    }
+
+    .book-title { font-size: 12px; color: #fff; font-weight: bold; line-height: 1.2; word-break: break-all;}
+    .book-tag { font-size: 10px; color: var(--c-gold); margin-top: 5px; border: 1px solid var(--c-gold-dim); padding: 1px 3px; border-radius: 3px; }
+
+    .book-tooltip {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        background: rgba(0,0,0,0.9);
+        border: 1px solid var(--c-gold);
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+        z-index: 100;
+        display: none;
+        animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .tooltip-bubble {
+        background: #fff;
+        color: #000;
+        padding: 8px 12px;
+        border-radius: 12px;
+        font-size: 13px;
+        position: relative;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    .tooltip-bubble::after {
+        content: '';
+        position: absolute;
+        bottom: -6px;
+        left: 50%;
+        margin-left: -6px;
+        border-width: 6px 6px 0;
+        border-style: solid;
+        border-color: #fff transparent;
+    }
+
+    .btn-open {
+        background: var(--c-gold);
+        color: #000;
+        border: none;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 12px;
+        transition: background 0.2s;
+    }
+    .btn-open:hover { background: #fff; }
+
+    .final-review-btn-container {
+        width: 100%;
+        text-align: center;
+        margin-top: 30px;
+        display: none; /* Shown after all books read */
+    }
+
+    .btn-final {
+        background: transparent;
+        border: 1px solid var(--c-gold);
+        color: var(--c-gold);
+        padding: 10px 30px;
+        font-family: 'Noto Serif SC', serif;
+        font-size: 16px;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s;
+    }
+    .btn-final:hover { background: var(--c-gold); color: #000; box-shadow: 0 0 15px var(--c-gold); }
+
+    /* SCREEN 2: Reader */
+    .reader-content {
+        background: #f4ecd8; /* Paper color */
+        color: #2b2b2b;
+        padding: 40px;
+        min-height: 100%;
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+        font-family: 'Noto Serif SC', serif;
+        font-size: 15px;
+        line-height: 1.8;
+        position: relative;
+        transform-origin: left center;
+    }
+    
+    .reader-title {
+        text-align: center;
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 30px;
+        color: #000;
+        border-bottom: 2px solid var(--c-gold);
+        padding-bottom: 10px;
+    }
+
+    .paragraph {
+        margin-bottom: 20px;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 4px;
+        transition: background 0.2s;
+    }
+    .paragraph:hover { background: rgba(212, 175, 55, 0.1); }
+    .paragraph::first-letter { font-size: 150%; font-weight: bold; color: var(--c-gold-dim); }
+
+    .comment-popup {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        max-width: 300px;
+        background: rgba(20, 20, 20, 0.95);
+        border: 1px solid var(--c-gold);
+        color: var(--c-gold);
+        padding: 15px;
+        padding-left: 60px; /* Space for avatar */
+        border-radius: 8px 8px 0 8px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        z-index: 200;
+        font-size: 13px;
+        display: none;
+        animation: slideInRight 0.3s ease;
+        min-height: 60px;
+    }
+    .comment-avatar { 
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 40px; 
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid var(--c-gold);
+        background-image: url('https://meee.com.tw/T57ZbCH');
+        background-size: cover;
+        background-position: center;
+    }
+
+    .btn-finish-read {
+        display: block;
+        width: 100%;
+        padding: 15px;
+        background: #2b2b2b;
+        color: var(--c-gold);
+        text-align: center;
+        margin-top: 30px;
+        cursor: pointer;
+        border: none;
+        font-family: 'Noto Serif SC', serif;
+    }
+    .btn-finish-read:hover { background: #000; }
+
+    /* SCREEN 3: Rating */
+    .rating-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        text-align: center;
+    }
+
+    .stars { font-size: 40px; cursor: pointer; margin: 20px 0; }
+    .star { color: #444; transition: color 0.2s; display: inline-block; }
+    .star.hover, .star.active { color: var(--c-gold); text-shadow: 0 0 10px var(--c-gold); }
+
+    .char-rating-area {
+        margin-top: 30px;
+        padding: 20px;
+        border: 1px dashed var(--c-gold-dim);
+        border-radius: 8px;
+        width: 80%;
+        display: none; /* Hidden until confirmed */
+        background: rgba(0,0,0,0.3);
+    }
+
+    .btn-confirm-rating, .btn-back-shelf {
+        background: var(--c-gold);
+        border: none;
+        padding: 10px 25px;
+        border-radius: 4px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-top: 20px;
+    }
+    .btn-back-shelf { background: transparent; border: 1px solid var(--c-gold); color: var(--c-gold); margin-top: 10px;}
+
+    /* SCREEN 4: Final Summary */
+    .final-content {
+        padding: 30px;
+        text-align: center;
+    }
+    .aventurine-portrait { font-size: 60px; margin-bottom: 20px; display: block; filter: drop-shadow(0 0 10px var(--c-gold)); }
+    .summary-text {
+        text-align: left;
+        line-height: 1.8;
+        font-size: 15px;
+        background: rgba(255,255,255,0.05);
+        padding: 20px;
+        border-radius: 8px;
+        border-left: 3px solid var(--c-gold);
+    }
+
+    /* Animations */
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes popUp { from { transform: translateX(-50%) scale(0.8); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
+    @keyframes slideInRight { from { transform: translateX(50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes pageFlip { from { transform: rotateY(0); } to { transform: rotateY(-10deg); } }
+
+</style>
+</head>
+<body>
+
+<div id="theater-container">
+    <!-- Modal for User Name -->
+    <div id="name-modal">
+        <div class="modal-content">
+          <h2 style="color: var(--c-gold);">请输入你的名字</h2>
+          <p style="color: #888; font-size: 12px; margin-bottom: 10px;">游戏内你的名字</p>
+          <input type="text" id="input-name" placeholder="箬云" value="你的名字" maxlength="10">
+          <br>
+          <button id="btn-start">开始阅读</button>
+        </div>
+    </div>
+
+    <div class="header">
+        <span>♠️</span> 砂金的同人剧场 <span>♥️</span>
+    </div>
+
+    <!-- SCREEN 1: Bookshelf -->
+    <div id="screen-shelf" class="screen">
+        <div style="text-align: center; padding: 10px; color: #888; font-size: 12px;">
+          请点击书籍封面开始阅读 · 已读完 <span id="read-count">0</span>/6 本
+        </div>
+        <div class="bookshelf-grid" id="book-grid">
+          <!-- Books injected via JS -->
+        </div>
+        <div class="final-review-btn-container" id="final-btn-container">
+          <button class="btn-final" onclick="showScreen('screen-final')">✨ 查看砂金的总评 ✨</button>
+        </div>
+        <div id="shelf-tooltip" class="book-tooltip">
+          <div class="tooltip-bubble" id="tooltip-text">...</div>
+          <button class="btn-open" id="btn-open-book">📖 翻开书本</button>
+        </div>
+    </div>
+
+    <!-- SCREEN 2: Reader -->
+    <div id="screen-reader" class="screen">
+        <div class="reader-content" id="reader-paper">
+          <div class="reader-title" id="reader-title">Title</div>
+          <div id="reader-body">
+          <!-- Text paragraphs injected via JS -->
+          </div>
+          <button class="btn-finish-read" onclick="finishReading()">—— 阅读完毕，去打分 ——</button>
+        </div>
+        <div id="comment-bubble" class="comment-popup">
+          <div class="comment-avatar"></div>
+          <div id="comment-content">Comment content</div>
+        </div>
+    </div>
+
+    <!-- SCREEN 3: Rating -->
+    <div id="screen-rating" class="screen">
+        <div class="rating-container">
+          <h2 style="color: var(--c-gold);">给《<span id="rating-book-title"></span>》打分</h2>
+          <p style="font-size: 12px; color: #888;">点击星星进行评价</p>
+          
+          <div class="stars" id="star-container">
+          <span class="star" data-val="1">★</span>
+          <span class="star" data-val="2">★</span>
+          <span class="star" data-val="3">★</span>
+          <span class="star" data-val="4">★</span>
+          <span class="star" data-val="5">★</span>
+          </div>
+          
+          <button id="btn-submit-rating" class="btn-confirm-rating">确定评分</button>
+
+          <div id="char-rating-area" class="char-rating-area">
+          <div style="margin-bottom: 15px; font-weight: bold; color: var(--c-gold);">
+          🎲 砂金的回应：
+          </div>
+          <div id="char-reaction-bubble" style="background:#fff; color:#000; padding:10px; border-radius:8px; position:relative; margin-bottom:15px; font-size:14px;">
+          <!-- User rating reaction -->
+          </div>
+          <div style="border-top: 1px solid #444; padding-top: 15px; text-align: left;">
+          <span style="color: #aaa; font-size: 12px;">砂金的打分：</span>
+          <span id="char-score" style="color: var(--c-gold); font-weight: bold;"></span>
+          <div id="char-comment" style="margin-top: 5px; font-size: 13px; color: #ddd; font-style: italic;"></div>
+          </div>
+          <button class="btn-back-shelf" onclick="backToShelf()">📚 返回书架</button>
+          </div>
+        </div>
+    </div>
+
+    <!-- SCREEN 4: Final Summary -->
+    <div id="screen-final" class="screen">
+        <div class="final-content">
+          <span class="aventurine-portrait">🦚</span>
+          <h2 style="color: var(--c-gold);">观后总结</h2>
+          <div class="summary-text">
+          <p>哎呀，真是难为你陪我看完这些……精彩绝伦的“杰作”了。</p>
+          <p>那些所谓“狗血”的剧情，我用脚也写不出来吧？至于那些让人脸红心跳的桥段……呵，如果我真如书里写的那样饥渴难耐、不择手段，朋友，你觉得你现在还能安然无恙地坐在这里吗？或者说，这其实是你潜意识里的期待？</p>
+          <p>不过，有一点他们没写错。无论是作为疯狂的赌徒，还是笼中的金丝雀，亦或是你那霸道的上司……只要是你期望的角色，我都乐意奉陪。毕竟，能博你一笑，这些都是好书，对么？</p>
+          <p style="text-align: right; margin-top: 20px; font-weight: bold; color: var(--c-gold);">—— 永远为你all in的砂金 🥂</p>
+          </div>
+          <button class="btn-back-shelf" onclick="backToShelf()">返回书架</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- GLOBAL VAR ---
+    let USER_NAME = "箬云"; 
+
+    // --- DATA ---
+    const booksData = [
+        {
+          id: 0,
+          title: "《带球跑：赌徒的亿万新娘》",
+          tag: "狗血 🩸",
+          coverColor: "linear-gradient(135deg, #4a0e0e, #220505)",
+          intro: "这也行？我看起来像是会让老婆带着我的孩子——还是十亿信用点——跑路的人吗？",
+          text: [
+          "那是一个雨夜，瓢泼大雨仿佛要淹没整个匹诺康尼。{name}紧紧护着微微隆起的小腹，手中攥着那张显示‘怀孕三周’的诊断单，眼中满是绝望。‘砂金，你这个冷血的魔鬼……’她喃喃自语。",
+          "三个月前，那场豪华的游轮赌局上，她作为抵押品被推到了那个男人面前。他金色的眼眸里没有一丝温度，只有玩味的笑意。‘两千万，买你一夜。’他的声音如同恶魔的低语。",
+          "现在，她不得不逃离。因为她听说，砂金为了那一笔涉及半个星系的生意，准备和翡翠联姻。她不能让孩子一出生就没有父亲，更不能让他成为豪门争斗的牺牲品！她咬了咬牙，带上了砂金放在床头的黑卡——里面有整整十亿。",
+          "五年后。机场大厅。一个缩小版的砂金戴着墨镜，酷酷地拉着{name}的手。‘妈咪，那个在电视上一直哭着找老婆的怪蜀黍，怎么长得跟我有点像？’",
+          "就在这时，一排黑衣保镖瞬间包围了机场。人群分开，那个身穿孔雀蓝西装的男人一步步走来，眼角泛红，声音沙哑：‘女人，偷了我的种，还想往哪跑？这一次，我要把你锁在床上，哪也不许去！’"
+          ],
+          comments: [
+          "怀孕三周就能隆起？这是怀了个扑满吗？医学奇迹。",
+          "两千万？太廉价了。如果是你，我愿意All in我的全部身家。",
+          "等等，我和翡翠？作者是不是对‘石心十人’的内部关系有什么误解？还有，黑卡没密码吗？",
+          "我有在电视上哭吗？这绝对是造谣，严重的公关危机。",
+          "锁在床上……嗯，这个提议虽然粗鲁，但或许我们可以探讨一下其中的……可行性？"
+          ],
+          userReaction: {
+          1: "明智的判断。这种逻辑漏洞百出的东西，确实只配垫桌角。",
+          3: "看来你对这种‘强取豪夺’的戏码还算受用？品味独特。",
+          5: "五星？天哪，朋友，你该不会真的在期待我把你抓回去‘锁’起来吧？"
+          },
+          charRating: "★☆☆☆☆",
+          charComment: "给一星是因为那十亿信用点设定得还算符合我的身价。剩下的？垃圾。"
+        },
+        {
+          id: 1,
+          title: "《雨中大象》",
+          tag: "文艺 🌧️",
+          coverColor: "linear-gradient(135deg, #2c3e50, #000000)",
+          intro: "这是在写书还是在写梦话？我甚至看不懂他想表达我很有钱还是很忧郁。",
+          text: [
+          "砂金坐在空荡荡的房间里，墙壁是白色的，像他苍白的灵魂。窗外在下雨，茨冈尼亚没有雨，但他的心里一直在下雨。那是一场关于存在的暴雨。",
+          "{name}看着他，就像看着一只被困在透明玻璃缸里的金鱼。不，是一只孔雀。一只忘记了如何开屏，只会凝视深渊的孔雀。她说：‘你的钱，填不满你心里的洞。’",
+          "‘什么是钱？’砂金问，手里把玩着一枚筹码，那筹码仿佛是他的心脏，一面是生，一面是死。‘钱是世界上最虚无的东西，就像这漫长的午后，就像那只看不见的大象。’",
+          "他们没有做爱，只是灵魂在空气中摩擦。空气中弥漫着的柑橘味，那是青春的尸体。砂金闭上眼，眼角滑落一滴金色的泪水，变成了真正的砂金石。",
+          "‘走吧。’他说，‘去一个没有赌局的世界。’于是他们化作了两阵风，消失在那个没有尽头的雨巷中，只留下一地碎裂的筹码，反射着冷冽的光。"
+          ],
+          comments: [
+          "虽然茨冈尼亚确实缺雨，但我心里没下雨，谢谢。另外，房间空荡荡是因为家具都被没收了吗？",
+          "金鱼？孔雀？这动物园开得挺热闹。但我更喜欢直接一点的比喻。",
+          "钱是虚无的？那你把工资卡给我？我不嫌虚无。",
+          "眼泪变成砂金石……这倒是个发家致富的好路子，哭几次就能买下匹诺康尼了。",
+          "没有赌局的世界太无聊了，我拒绝。还有，变成风是什么鬼结局？"
+          ],
+          userReaction: {
+          1: "看来你也不喜欢这种无病呻吟。很好，我们有共识。",
+          3: "你是读懂了其中的深意，还是单纯看着文字发呆睡着了？",
+          5: "哇哦，没想到你是个文艺青年？看来以后送礼物得改送诗集了？"
+          },
+          charRating: "★★☆☆☆",
+          charComment: "两分给‘眼泪变成宝石’这个创意，虽然不科学，但很有商业价值。"
+        },
+        {
+          id: 2,
+          title: "《私人调教》",
+          tag: "车 🔞",
+          coverColor: "linear-gradient(135deg, #ff0055, #550000)",
+          intro: "哦？（挑眉）看来这本书的内容需要我们……私下里好好验证一下？",
+          text: [
+          "办公室的门被反锁了。百叶窗拉下，隔绝了外面的视线。砂金松了松领带，那双平日里充满算计的眼睛，此刻却燃烧着赤裸裸的欲望。他一步步逼近办公桌前的{name}。",
+          "‘这就是你交上来的报告？’他将那叠文件扔在地上，随后一把抓住她的手腕，将她按在宽大的红木办公桌上。‘作为惩罚，今天的加班内容……由我来定。’",
+          "冰凉的手指划过她的脊背，激起一阵战栗。‘怎么在发抖？朋友，这可是你自找的。’他低笑着，另一只手解开了她衬衫的第一颗扣子，‘让我看看，你里面是不是也像这份报告一样……漏洞百出。’",
+          "领带不再是装饰品，而是成了束缚双手的工具。{name}被迫仰起头，承受着他狂风骤雨般的吻。他的气息充满了侵略性，带着那股独特的昂贵香水味，无孔不入地钻进她的每一个毛孔。",
+          "‘叫出声来，’他在她耳边命令道，声音沙哑而性感，‘让外面的人都听听，平日里一本正经的石心十人，是怎么欺负他的小助理的……’"
+          ],
+          comments: [
+          "锁门是个好习惯，值得表扬。但我通常不会扔文件，那是公司的资产。",
+          "加班内容？嗯……这种加班费我通常给得很高。",
+          "‘漏洞百出’？这个双关语用得……很微妙。但我喜欢。",
+          "领带的新用法。虽然有点废领带，但视觉效果不错，下次可以试试。",
+          "让外面人听到？这可不行，我有很强的领地意识。你是我的，只能给我听。"
+          ],
+          userReaction: {
+          1: "太害羞了？还是觉得我不够行？（眯眼）",
+          3: "中规中矩？看来现实中的体验要比这刺激得多，才能满足你。",
+          5: "诚实的好孩子。（凑近）既然这么喜欢，今晚……复刻一下？"
+          },
+          charRating: "★★★★☆",
+          charComment: "四星。扣一星是因为场景太单一，我们可以尝试更多……有趣的地点。"
+        },
+        {
+          id: 3,
+          title: "《当我的上司变成了一枚筹码》",
+          tag: "猎奇 🎰",
+          coverColor: "linear-gradient(135deg, #00ff9d, #003300)",
+          intro: "这甚至不是人类了？作者的精神状态令人担忧，建议联系拉帝奥教授。",
+          text: [
+          "一觉醒来，{name}发现床上躺着的不是砂金，而是一枚巨大的、闪着金光的筹码。这枚筹码还会说话，声音透着熟悉的欠揍感：‘早安，朋友。今天打算把我押在哪一桌？’",
+          "{name}崩溃了。她不得不把‘砂金筹码’放进包里带去公司。开会时，筹码在桌上滚来滚去，发出清脆的响声。‘那个方案不行，’筹码震动着，‘全押在B计划上！’",
+          "午饭时间，{name}正准备吃三明治，筹码滚进了她的盘子里。‘喂！把番茄酱拿开！会弄脏我的镀金层的！’砂金筹码尖叫道。",
+          "最可怕的是晚上。{name}刚洗完澡，就看见那枚筹码立在枕头上，似乎在深情地注视着她（如果筹码有眼睛的话）。‘虽然我现在没有身体，’筹码羞涩地说，‘但我们可以玩点精神层面的……比如你抛我一百次？’",
+          "‘如果你抛出正面，我就归你；如果你抛出反面，你就归我。’筹码在空中旋转，闪耀着诡异的光芒，‘怎么样，这场赌局，你敢接吗？’"
+          ],
+          comments: [
+          "变成筹码……从某种意义上说，这确实是我的终极形态？",
+          "全押B计划，这确实像我会说的话。",
+          "番茄酱确实很难洗，这点好评。但我不会尖叫，我会优雅地要求赔偿。",
+          "抛我一百次？这听起来像是某种奇怪的虐待，又像是某种奇怪的情趣……",
+          "无论正反都是赢，这就是庄家的必胜法。哪怕变成筹码，我也不会输。"
+          ],
+          userReaction: {
+          1: "确实，太怪了。再看一眼。",
+          3: "你也觉得这种设定有点……带感？",
+          5: "你……该不会有什么恋物癖吧？还是说你更喜欢那种‘任人摆布’的筹码形态？"
+          },
+          charRating: "★★★☆☆",
+          charComment: "三星。虽然荒诞，但精准捕捉到了我‘这就是一场赌局’的人生哲学。而且……不用穿衣服挺省事的。"
+        },
+        {
+          id: 4,
+          title: "《替身情人的逆袭》",
+          tag: "狗血 🩸",
+          coverColor: "linear-gradient(135deg, #8800ff, #220044)",
+          intro: "替身？我砂金字典里没有‘替身’两个字，只有‘唯一’和‘无关紧要’。",
+          text: [
+          "所有人都知道，{name}只是那个死去的女人的替身。砂金留着她，只是因为她眼角的那颗泪痣，像极了他心中的白月光。他给她买最贵的珠宝，却从不看她的眼睛。",
+          "‘别妄想了，’他在醉酒后捏着她的下巴，‘你连她的一根手指头都比不上。’{name}心如刀绞，却依然默默忍受，因为她爱这个男人。",
+          "直到那一天，真正的白月光回来了。砂金毫不犹豫地将{name}赶出了别墅。‘这是五千万，拿去滚。’他冷冷地扔下一张支票。",
+          "{name}拿着支票，突然笑了。她撕碎了支票，反手给了砂金一巴掌：‘老娘不干了！其实我是星际和平公司董事长的私生女，我是来体验生活的！’",
+          "三年后，砂金破产流落街头（虽然这在现实中不可能），看着电视上那个光芒万丈的女首富{name}，悔恨的泪水打湿了衣襟。‘如果上天再给我一次机会……’"
+          ],
+          comments: [
+          "白月光？我的过去只有为了生存的挣扎，哪有空搞白月光？",
+          "‘你连她一根手指都比不上’？这种话太没品了，我只会夸奖女士。",
+          "五千万？打发叫花子吗？分手费至少得按公司股份算。",
+          "私生女？这个反转……虽然老套，但如果你真是，那我当初肯定早就查出来了。",
+          "我？破产？流落街头？哈！这是全书最好笑的笑话。绝对不可能。"
+          ],
+          userReaction: {
+          1: "没错，让我破产是最大的败笔。这不科学。",
+          3: "看到我被打脸你很爽是吧？啧，真是个坏心眼的朋友。",
+          5: "你果然很想看我跪在地上求你回来的样子……哼，梦里什么都有。"
+          },
+          charRating: "★☆☆☆☆",
+          charComment: "这不叫逆袭，这叫臆想。而且让我破产是对我专业能力的极大侮辱。"
+        },
+        {
+          id: 5,
+          title: "《会议室的桌下秘密》",
+          tag: "车 🔞",
+          coverColor: "linear-gradient(135deg, #ff8800, #552200)",
+          intro: "这本……（摸下巴）似乎比刚才那本更注重‘实战’技巧？",
+          text: [
+          "石心十人的会议正在进行。钻石在屏幕那头严肃地部署着战略。而会议桌下，砂金的皮鞋正顺着{name}的小腿慢慢上滑，勾住了她的丝袜边缘。",
+          "{name}坐在他对面，脸色涨红，却不得不正襟危坐，手里假装记着笔记。‘关于茨冈尼亚的投资回报率……’砂金一边一本正经地发言，一边用脚尖轻轻蹭着她的膝盖内侧。",
+          "手机震动了一下。是砂金发来的消息：‘那个表情不错。再忍耐一下，会议还有半小时结束。或者……你现在就钻到桌子底下来？’",
+          "{name}瞪了他一眼，试图用腿夹住他作乱的脚，却反而被他趁机分开。一种难以言喻的酥麻感传遍全身，她手中的笔‘啪’地一声掉在地上。",
+          "‘{name}小姐，有什么问题吗？’钻石的声音传来。砂金抢先回答，笑容灿烂：‘没问题，她只是太投入了，对吧？’他在‘投入’两个字上加了重音，桌下的动作更加放肆。"
+          ],
+          comments: [
+          "在钻石的会议上？这风险太大了……不过，高风险，高回报。",
+          "一心二用可是我的强项。一边谈几亿的生意，一边谈……情。",
+          "短信调情，经典且有效。但我通常会直接用眼神示意。",
+          "这种时候掉笔可是大忌，不过如果是为了钻下去捡笔……那就是另一回事了。",
+          "‘投入’。很好的词。我希望你在各个方面都能这么‘投入’。"
+          ],
+          userReaction: {
+          1: "太刺激了受不了？没关系，我们可以循序渐进。",
+          3: "看来你对这种‘背德感’有感觉？",
+          5: "五星好评！看来下次开会，我有必要特意安排你在我对面了。"
+          },
+          charRating: "★★★★★",
+          charComment: "五星。虽然风险评估不合格，但作为一种生活情趣的设想，它完美击中了我的好球区。"
+        }
+    ];
+
+    // --- STATE ---
+    let readBooks = new Set();
+    let currentBookId = null;
+    let currentUserRating = 0;
+
+    // --- START LOGIC ---
+    const btnStart = document.getElementById('btn-start');
+    const inputName = document.getElementById('input-name');
+    const modal = document.getElementById('name-modal');
+    
+    btnStart.onclick = function() {
+        const val = inputName.value.trim();
+        if(val) USER_NAME = val;
+        modal.style.opacity = 0;
+        setTimeout(() => {
+          modal.style.display = 'none';
+          // Reveal Shelf
+          showScreen('screen-shelf');
+        }, 500);
+    };
+
+    // --- INIT ---
+    function init() {
+        // Shelf is active by class, but hidden by modal overlay effectively.
+        // We render books now.
+        const grid = document.getElementById('book-grid');
+        booksData.forEach(book => {
+          const el = document.createElement('div');
+          el.className = 'book-item';
+          el.style.background = book.coverColor;
+          el.innerHTML = `
+          <div class="book-spine"></div>
+          <div class="book-title">${book.title}</div>
+          <div class="book-tag">${book.tag}</div>
+          `;
+          el.onclick = () => selectBook(book);
+          grid.appendChild(el);
+        });
+    }
+
+    // --- LOGIC ---
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => {
+          s.classList.remove('active');
+          s.style.display = 'none';
+        });
+        const active = document.getElementById(id);
+        active.style.display = 'block';
+        setTimeout(() => active.classList.add('active'), 10);
+    }
+
+    function selectBook(book) {
+        const tooltip = document.getElementById('shelf-tooltip');
+        const text = document.getElementById('tooltip-text');
+        const btn = document.getElementById('btn-open-book');
+        
+        tooltip.style.display = 'block';
+        text.innerHTML = `<span style="color:#d4af37; font-weight:bold;">砂金：</span> ${book.intro}`;
+        
+        btn.onclick = () => openReader(book);
+    }
+
+    function openReader(book) {
+        currentBookId = book.id;
+        document.getElementById('shelf-tooltip').style.display = 'none';
+        
+        document.getElementById('reader-title').innerText = book.title;
+        const body = document.getElementById('reader-body');
+        body.innerHTML = '';
+        
+        // Inject user name into text paragraphs
+        book.text.forEach((rawPara, index) => {
+          // Replace {name} placeholder
+          const processedPara = rawPara.replace(/{name}/g, USER_NAME);
+
+          const p = document.createElement('div');
+          p.className = 'paragraph';
+          p.innerHTML = processedPara;
+          p.onclick = (e) => showComment(e, book.comments[index]);
+          // Animation
+          p.style.opacity = 0;
+          p.style.transform = "rotateY(90deg)";
+          p.style.transition = `all 0.5s ease ${index * 0.1}s`;
+          body.appendChild(p);
+          
+          setTimeout(() => {
+          p.style.opacity = 1;
+          p.style.transform = "rotateY(0)";
+          }, 50);
+        });
+
+        document.getElementById('screen-reader').scrollTop = 0;
+        showScreen('screen-reader');
+    }
+
+    function showComment(e, text) {
+        const bubble = document.getElementById('comment-bubble');
+        const content = document.getElementById('comment-content');
+        content.innerText = text;
+        bubble.style.display = 'block';
+        
+        if(window.commentTimeout) clearTimeout(window.commentTimeout);
+        window.commentTimeout = setTimeout(() => {
+          bubble.style.display = 'none';
+        }, 4000);
+    }
+
+    function finishReading() {
+        showScreen('screen-rating');
+        const book = booksData.find(b => b.id === currentBookId);
+        document.getElementById('rating-book-title').innerText = book.title;
+        resetStars();
+        document.getElementById('char-rating-area').style.display = 'none';
+        document.getElementById('btn-submit-rating').style.display = 'block';
+    }
+
+    // Stars Logic
+    const stars = document.querySelectorAll('.star');
+    stars.forEach(star => {
+        star.onclick = () => {
+          currentUserRating = parseInt(star.getAttribute('data-val'));
+          updateStars(currentUserRating);
+        };
+        star.onmouseover = () => updateStars(parseInt(star.getAttribute('data-val')), true);
+        star.onmouseleave = () => updateStars(currentUserRating);
+    });
+
+    function updateStars(val, isHover = false) {
+        stars.forEach(s => {
+          const v = parseInt(s.getAttribute('data-val'));
+          if (v <= val) {
+          s.className = isHover ? 'star hover' : 'star active';
+          } else {
+          s.className = 'star';
+          }
+        });
+    }
+
+    function resetStars() {
+        currentUserRating = 0;
+        stars.forEach(s => s.className = 'star');
+    }
+
+    // Submit Rating
+    document.getElementById('btn-submit-rating').onclick = () => {
+        if (currentUserRating === 0) return;
+        
+        const book = booksData.find(b => b.id === currentBookId);
+        
+        let reactionText = "";
+        if (currentUserRating <= 2) reactionText = book.userReaction[1];
+        else if (currentUserRating <= 4) reactionText = book.userReaction[3];
+        else reactionText = book.userReaction[5];
+
+        document.getElementById('char-reaction-bubble').innerText = reactionText;
+        document.getElementById('char-score').innerText = book.charRating;
+        document.getElementById('char-comment').innerText = book.charComment;
+
+        document.getElementById('btn-submit-rating').style.display = 'none';
+        document.getElementById('char-rating-area').style.display = 'block';
+        
+        readBooks.add(currentBookId);
+        document.getElementById('read-count').innerText = readBooks.size;
+        
+        if (readBooks.size === booksData.length) {
+          document.getElementById('final-btn-container').style.display = 'block';
+        }
+    };
+
+    function backToShelf() {
+        showScreen('screen-shelf');
+    }
+
+    // Run
+    init();
+
+</script>
+</body>
+</html>
